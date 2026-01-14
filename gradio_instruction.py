@@ -16,16 +16,21 @@ print("Initializing Models...")
 for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
     os.environ.pop(var, None)
 
+# Yolo and Florence-2 模型加载
 yolo_model = get_yolo_model(model_path='weights/icon_detect/model.pt')
 caption_model_processor = get_caption_model_processor(model_name="florence2", model_name_or_path="weights/icon_caption_florence")
 
 def encode_image(image):
+    """将 PIL 图像转换为 Base64 字符串以便发送给多模态 LLM"""
     buffered = io.BytesIO()
     # High quality for visual grounding
     image.save(buffered, format="JPEG", quality=95)
     return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 def get_combined_decision(api_key, base_url, model_name, elements_text, instruction, image_pil):
+    """
+    核心决策函数：将解析后的元数据与 SoM 标注图发送给大模型进行 ID 选择
+    """
     # Ensure base_url ends with /v1
     if base_url and "api" in base_url and not base_url.endswith("/v1") and not base_url.endswith("/v1/"):
         base_url = base_url.rstrip("/") + "/v1"
@@ -137,7 +142,11 @@ def process_instruction(
     use_paddleocr,
     imgsz
 ):
+ """
+    Gradio 回调主函数：执行先“解析屏幕”后“逻辑决策”的完整流程
+    """
     # --- Step 1: OmniParser Core ---
+    # 计算缩放比例以适配不同分辨率的截图
     box_overlay_ratio = image_input.size[0] / 3200
     draw_bbox_config = {
         'text_scale': 0.8 * box_overlay_ratio,
@@ -146,10 +155,12 @@ def process_instruction(
         'thickness': max(int(3 * box_overlay_ratio), 1),
     }
 
+    # 执行 OCR 检测
     # Important: Use False for PaddleOCR in this specific environment
     ocr_bbox_rslt, _ = check_ocr_box(image_input, display_img=False, output_bb_format='xyxy', easyocr_args={'paragraph': False, 'text_threshold':0.5}, use_paddleocr=use_paddleocr)
     text, ocr_bbox = ocr_bbox_rslt
     
+     # 核心解析函数：执行 YOLO 检测并生成 SoM (Set-of-Mark) 标注图像
     dino_labled_img, label_coordinates, parsed_content_list = get_som_labeled_img(
         image_input, yolo_model, BOX_TRESHOLD=box_threshold, output_coord_in_ratio=True, 
         ocr_bbox=ocr_bbox, draw_bbox_config=draw_bbox_config, 
@@ -167,7 +178,7 @@ def process_instruction(
         etype = item.get('type', 'unknown')
         bbox = item.get('bbox', [0,0,0,0]) # [x1, y1, x2, y2] ratio
         
-        # UI Pattern: If it's an icon and OCR is a single character, it's a high-risk mis-OCR
+        # 风险提示：如果图标被 OCR 识别为单字符，标记为“低可信度”，引导 LLM 仔细观察图片
         is_risky = (etype == "icon" and len(content) == 1)
         risk_tag = "[Low Confidence OCR]" if is_risky else ""
         
@@ -207,7 +218,7 @@ def process_instruction(
 
     selected_bbox_val = "{}"
     if draw_id_box(best_id, draw, w, h, font):
-        # Retrieve the chosen element's bbox
+        # 提取选中元素的精确 JSON 坐标信息
         target_item = parsed_content_list[best_id]
         t_bbox = target_item.get('bbox', [0,0,0,0])
         bbox_data = {
@@ -233,8 +244,8 @@ with gr.Blocks(title="OmniParser Instruction Follower") as demo:
             instr_in = gr.Textbox(label='Step 2: Natural Language Instruction', placeholder='e.g. Click the login button')
             
             with gr.Accordion("API Settings", open=True):
-                api_key_in = gr.Textbox(label='API Key', type='password', value='sk-...')
-                base_url_in = gr.Textbox(label='Base URL', value='https:')
+                api_key_in = gr.Textbox(label='API Key', type='password', value='sk-XmjZG1Caqk5yAgo2RhOFTkSyiqghF1umTO5iMYp9Lm3wQHsh')
+                base_url_in = gr.Textbox(label='Base URL', value='https://api.aabao.top/v1')
                 model_in = gr.Textbox(label='Model Name', value='gemini-3-flash-preview-128')
                 
             with gr.Accordion("Advanced OmniParser Config", open=False):
