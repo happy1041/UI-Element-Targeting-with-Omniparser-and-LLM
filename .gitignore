@@ -32,3 +32,5 @@ Thumbs.db
 debug.ipynb
 .ipynb_checkpoints/
 index.html?linkid=2289031
+.gitsecret/keys/random_seed
+!*.secret

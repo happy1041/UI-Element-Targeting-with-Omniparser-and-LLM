@@ -233,8 +233,8 @@ with gr.Blocks(title="OmniParser Instruction Follower") as demo:
             instr_in = gr.Textbox(label='Step 2: Natural Language Instruction', placeholder='e.g. Click the login button')
             
             with gr.Accordion("API Settings", open=True):
-                api_key_in = gr.Textbox(label='API Key', type='password', value='sk-XmjZG1Caqk5yAgo2RhOFTkSyiqghF1umTO5iMYp9Lm3wQHsh')
-                base_url_in = gr.Textbox(label='Base URL', value='https://api.aabao.top/v1')
+                api_key_in = gr.Textbox(label='API Key', type='password', value='sk-...')
+                base_url_in = gr.Textbox(label='Base URL', value='https:')
                 model_in = gr.Textbox(label='Model Name', value='gemini-3-flash-preview-128')
                 
             with gr.Accordion("Advanced OmniParser Config", open=False):
