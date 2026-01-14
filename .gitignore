@@ -1,13 +1,34 @@
+# Models & Weights
 weights/icon_caption_blip2
 weights/icon_caption_florence
 weights/icon_detect/
 weights/icon_detect_v1_5/
 weights/icon_detect_v1_5_2/
-.gradio
-__pycache__/
-debug.ipynb
-util/__pycache__/
-index.html?linkid=2289031
-wget-log
 weights/icon_caption_florence_v2/
+
+# Python & Environment
+__pycache__/
+util/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.python-version
+
+# Gradio & Logs
+.gradio/
 omnitool/gradio/uploads/
+wget-log
+*.log
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Jupyter & Debug
+debug.ipynb
+.ipynb_checkpoints/
+index.html?linkid=2289031
